@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="icon" type="image/x-icon" href="logo.png" />
     <link
       href="https://fonts.googleapis.com/css2?family=Coiny&family=Sono:wght@400;600;700&display=swap"
       rel="stylesheet"
@@ -21,10 +22,10 @@
           <h1>Today I learned</h1>
         </div>
 
-        <button>Share a fact</button>
+        <button class="btn btn-large btn-open">Share a fact</button>
       </header>
 
-      <form class="fact-form">
+      <form class="fact-form hidden">
         <input type="text" placeholder="Share a fact with the world..." />
         <span>200</span>
         <input type="text" placeholder="Trustworthy source..." />
@@ -35,40 +36,48 @@
           <option value="science">Science</option>
           <option value="finance">Finance</option>
         </select>
+        <button class="btn btn-large">Post</button>
       </form>
 
       <main class="main">
         <aside>
           <ul>
-            <li>
-              <button>All</button>
+            <li class="category">
+              <button class="btn btn-all-categories">All</button>
             </li>
-            <li>
-              <button>Technology</button>
+            <li class="category">
+              <button
+                class="btn btn-categories"
+                style="background-color: #3b82f6"
+              >
+                Technology
+              </button>
             </li>
-            <li>
-              <button>Science</button>
-            </li>
-            <li>
-              <button>Finance</button>
+            <li class="category">
+              <button
+                class="btn btn-categories"
+                style="background-color: #16a34a"
+              >
+                Science
+              </button>
             </li>
           </ul>
         </aside>
 
         <section>
-          <ul>
+          <ul class="facts-list">
             <li class="fact">
               <p>
                 React is being developed by Meta (formerly facebook).
                 <a class="source" href="https://opensource.fb.com/">(Source)</a>
               </p>
               <span class="tag" style="background-color: #3b82f6"
-                >#technology#</span
+                >technology</span
               >
               <div class="vote-buttons">
-                <button>👍 <strong>24</strong></button>
-                <button>🤯 <strong>9</strong></button>
-                <button>⛔️ <strong>4</strong></button>
+                <button>👍 24</button>
+                <button>🤯 9</button>
+                <button>⛔️ 4</button>
               </div>
             </li>
             <li class="fact">
@@ -82,18 +91,17 @@
                   >(Source)</a
                 >
               </p>
-              <span class="tag" style="background-color: #eab308"
-                >#society#</span
-              >
+              <span class="tag" style="background-color: #eab308">society</span>
               <div class="vote-buttons">
-                <button>👍 <strong>11</strong></button>
-                <button>🤯 <strong>2</strong></button>
-                <button>⛔️ <strong>0</strong></button>
+                <button>👍 11</button>
+                <button>🤯 2</button>
+                <button>⛔️ 0</button>
               </div>
             </li>
           </ul>
         </section>
       </main>
     </div>
+    <script src="script.js"></script>
   </body>
 </html>
