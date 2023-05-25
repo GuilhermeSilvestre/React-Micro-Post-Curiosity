@@ -18,6 +18,20 @@ body {
   margin: 0 auto;
 }
 
+.message {
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 32px;
+  font-weight: 600;
+  margin-top: 24px;
+}
+
+.disputed {
+  font-weight: 600;
+  color: #ef4444;
+  margin-right: 10px;
+}
+
 .header {
   margin-bottom: 40px;
   display: flex;
@@ -29,6 +43,12 @@ body {
   display: grid;
   grid-template-columns: 250px 1fr;
   gap: 48px;
+  height: calc(100vh - 68px - 48px - 40px); /*isso não rolou*/
+}
+
+.section {
+  overflow: scroll;
+  padding-bottom: 40px;
 }
 
 @media (max-width: 900px) {
@@ -115,6 +135,10 @@ h1 {
 
 .vote-buttons button:hover {
   background-color: #292524;
+}
+
+.vote-buttons button:disabled {
+  background-color: #44403c;
 }
 
 ul {
@@ -227,4 +251,32 @@ ul {
 
 .hidden {
   display: none;
+}
+
+/*** 100 Responsive ***/
+
+@media (max-width: 900px) {
+  .main {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  #root {
+    padding: 24px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .fact-form {
+    padding: 16px;
+  }
+
+  .fact {
+    padding: 12px 16px;
+  }
 }

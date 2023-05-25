@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import supabase from './supabase';
 import './style.css';
 
 const CATEGORIES = [
@@ -12,54 +13,74 @@ const CATEGORIES = [
   { name: 'news', color: '#8b5cf6' },
 ];
 
-const initialFacts = [
-  {
-    id: 1,
-    text: 'React is being developed by Meta (formerly facebook)',
-    source: 'https://opensource.fb.com/',
-    category: 'technology',
-    votesInteresting: 24,
-    votesMindblowing: 9,
-    votesFalse: 4,
-    createdIn: 2021,
-  },
-  {
-    id: 2,
-    text: 'Millennial dads spend 3 times as much time with their kids than their fathers spent with them. In 1982, 43% of fathers had never changed a diaper. Today, that number is down to 3%',
-    source:
-      'https://www.mother.ly/parenting/millennial-dads-spend-more-time-with-their-kids',
-    category: 'society',
-    votesInteresting: 11,
-    votesMindblowing: 2,
-    votesFalse: 0,
-    createdIn: 2019,
-  },
-  {
-    id: 3,
-    text: 'Lisbon is the capital of Portugal',
-    source: 'https://en.wikipedia.org/wiki/Lisbon',
-    category: 'society',
-    votesInteresting: 8,
-    votesMindblowing: 3,
-    votesFalse: 1,
-    createdIn: 2015,
-  },
-];
+function isValidHttpUrl(string) {
+  let url;
+
+  try {
+    url = new URL(string);
+  } catch (_) {
+    return false;
+  }
+
+  return url.protocol === 'http:' || url.protocol === 'https:';
+}
 
 function App() {
   const [showForm, setShowForm] = useState(false);
+  const [facts, setFacts] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentCategory, setCurrentCategory] = useState('all');
+
+  useEffect(
+    function () {
+      async function getFacts() {
+        setIsLoading(true);
+
+        let query = supabase.from('facts').select('*');
+
+        if (currentCategory !== 'all') {
+          query = query.eq('category', currentCategory);
+        }
+
+        const { data: facts, error } = await query
+          .order('votesInteresting', { ascending: false })
+          .limit(100);
+
+        //console.log(error);
+
+        if (!error) setFacts(facts);
+        else {
+          alert('There was an error loading data');
+        }
+
+        setIsLoading(false);
+      }
+      getFacts();
+    },
+    [currentCategory]
+  );
 
   return (
     <>
       <Header showForm={showForm} setShowForm={setShowForm} />
-      {showForm ? <NewFactForm /> : null}
+      {showForm ? (
+        <NewFactForm setFacts={setFacts} setShowForm={setShowForm} />
+      ) : null}
 
       <main className="main">
-        <CategoryFilters />
-        <FactList />
+        <CategoryFilters setCurrentCategory={setCurrentCategory} />
+        {isLoading ? (
+          <Loading />
+        ) : (
+          <FactList facts={facts} setFacts={setFacts} />
+        )}
       </main>
     </>
   );
+}
+
+function Loading() {
+  return <p className="message">Is Loading...</p>;
 }
 
 function Header({ showForm, setShowForm }) {
@@ -82,14 +103,35 @@ function Header({ showForm, setShowForm }) {
   );
 }
 
-function NewFactForm() {
+function NewFactForm({ setFacts, setShowForm }) {
   const [text, setText] = useState('');
   const [source, setSource] = useState('');
   const [category, setCategory] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const textLength = text.length;
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+
+    if (text && isValidHttpUrl(source) && category && textLength <= 200) {
+      setIsUploading(true);
+
+      //Upload fact to supabase and receive new fact object
+      const { data: newFact, error } = await supabase
+        .from('facts')
+        .insert([{ text, source, category }])
+        .select();
+
+      setIsUploading(false);
+
+      if (!error) setFacts((facts) => [newFact[0], ...facts]);
+
+      setText('');
+      setSource('');
+      setCategory('');
+
+      setShowForm(false);
+    }
   }
 
   return (
@@ -99,13 +141,15 @@ function NewFactForm() {
         placeholder="Share a fact with the world..."
         value={text}
         onChange={(e) => setText(e.target.value)}
+        disabled={isUploading}
       />
       <span>{200 - textLength}</span>
       <input
         value={source}
         type="text"
-        placeholder="Trustworthy source..."
+        placeholder="http://example.com"
         onChange={(e) => setSource(e.target.value)}
+        disabled={isUploading}
       />
       <label></label>
       <select value={category} onChange={(e) => setCategory(e.target.value)}>
@@ -116,21 +160,29 @@ function NewFactForm() {
           </option>
         ))}
       </select>
-      <button className="btn btn-large">Post</button>
+      <button className="btn btn-large" disabled={isUploading}>
+        Post
+      </button>
     </form>
   );
 }
 
-function CategoryFilters() {
+function CategoryFilters({ setCurrentCategory }) {
   return (
     <aside>
       <ul>
         <li className="category">
-          <button className="btn btn-all-categories">All</button>
+          <button
+            className="btn btn-all-categories"
+            onClick={() => setCurrentCategory('all')}
+          >
+            All
+          </button>
         </li>
         {CATEGORIES.map((cat) => (
           <li key={cat.name} className="category">
             <button
+              onClick={() => setCurrentCategory(cat.name)}
               className="btn btn-categories"
               style={{ backgroundColor: cat.color }}
             >
@@ -143,25 +195,52 @@ function CategoryFilters() {
   );
 }
 
-function FactList() {
-  // TEMPORARY
-  const facts = initialFacts;
+function FactList({ facts, setFacts }) {
+  if (facts.length === 0) {
+    return (
+      <p className="message">
+        No facts for this category yet! Create the first one!
+      </p>
+    );
+  }
 
   return (
     <section>
       <ul className="facts-list">
         {facts.map((fact) => (
-          <Fact key={fact.id} factsObs={fact} />
+          <Fact key={fact.id} factsObs={fact} setFacts={setFacts} />
         ))}
       </ul>
-      <p>There are {facts.length} facts in the database! Add your own!</p>
+      <p>There are {facts.length} fact(s) in the database! Add your own!</p>
     </section>
   );
 }
 
-function Fact({ factsObs }) {
+function Fact({ factsObs, setFacts }) {
+  const [isUpdating, setIsUpdating] = useState(false);
+  const isDisputed =
+    factsObs.votesInteresting + factsObs.votesMindblowing < factsObs.votesFalse;
+
+  async function handleVote(columnName) {
+    setIsUpdating(true);
+
+    const { data: updatedFact, error } = await supabase
+      .from('facts')
+      .update({ [columnName]: factsObs[columnName] + 1 })
+      .eq('id', factsObs.id)
+      .select();
+    setIsUpdating(false);
+
+    if (!error)
+      setFacts((facts) =>
+        facts.map((f) => (f.id === factsObs.id ? updatedFact[0] : f))
+      );
+    console.log(error);
+  }
+
   return (
     <li className="fact">
+      {isDisputed ? <span className="disputed">[!DISPUTED!]</span> : null}
       <p>
         {factsObs.text}
         <a className="source" href={factsObs.source}>
@@ -179,9 +258,21 @@ function Fact({ factsObs }) {
         {factsObs.category}
       </span>
       <div className="vote-buttons">
-        <button>👍 {factsObs.votesInteresting}</button>
-        <button>🤯 {factsObs.votesMindblowing}</button>
-        <button>⛔️ {factsObs.votesFalse}</button>
+        <button
+          onClick={() => handleVote('votesInteresting')}
+          disabled={isUpdating}
+        >
+          👍 {factsObs.votesInteresting}
+        </button>
+        <button
+          onClick={() => handleVote('votesMindblowing')}
+          disabled={isUpdating}
+        >
+          🤯 {factsObs.votesMindblowing}
+        </button>
+        <button onClick={() => handleVote('votesFalse')} disabled={isUpdating}>
+          ⛔️ {factsObs.votesFalse}
+        </button>
       </div>
     </li>
   );
